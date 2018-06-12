@@ -7,13 +7,15 @@ const PriceComparison = {
 
         return {
             cheapestRetailerFor (item) {
-                const { retailer } = _retailers
-                    .map(retailer => ({ retailer, price: retailer.getPrice(item) }))
-                    .reduce((result, match) => {
-                        return match.price < result.price ? match : result;
-                    });
+                const matches = _retailers
+                    .map(retailer => ({ retailer, price: retailer.getPrice(item) }));
 
-                return retailer;
+                const { price } = matches
+                    .reduce((result, match) => match.price < result.price ? match : result);
+
+                return matches
+                    .filter((match) => match.price === price )
+                    .map((match) => match.retailer )
             }
         };
     }
@@ -32,6 +34,21 @@ describe('PriceComparison', () => {
         const retailer = comparison
             .cheapestRetailerFor({ make: 'LG', model: 'SH002' });
 
-        expect(retailer).to.deep.equal(acmeTv);
+        expect(retailer).to.deep.equal([acmeTv]);
+    });
+
+    it('finds retailers with the cheapest television', () => {
+        const acmeTv = { getPrice: () => 149.99 };
+        const screenBargains = { getPrice: () => 149.99 };
+        const televizion = { getPrice: () => 249.99 };
+
+        const comparison = PriceComparison.withRetailers([
+            screenBargains, acmeTv, televizion
+        ]);
+
+        const retailer = comparison
+            .cheapestRetailerFor({ make: 'LG', model:  'SH002' });
+
+        expect(retailer).to.have.deep.members([acmeTv, screenBargains]);
     });
 });
